@@ -1,3 +1,5 @@
+package pl.kryptografia.model;
+
 import java.nio.ByteBuffer;
 
 public class SHA1 {

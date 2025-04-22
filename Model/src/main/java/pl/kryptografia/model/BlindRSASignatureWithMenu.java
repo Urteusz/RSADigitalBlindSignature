@@ -1,3 +1,5 @@
+package pl.kryptografia.model;
+
 import java.math.BigInteger;
 import java.io.*;
 import java.util.Random;
