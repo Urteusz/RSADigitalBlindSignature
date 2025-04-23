@@ -4,10 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
 
-import javafx.beans.property.ReadOnlyStringProperty;
-import javafx.beans.value.ChangeListener;
 import javafx.stage.Stage;
 import javafx.stage.FileChooser;
 import javafx.fxml.FXML;
@@ -18,8 +15,6 @@ import pl.kryptografia.model.*;
 
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.ResourceBundle;
 
 public class MainController implements Initializable {
@@ -70,7 +65,7 @@ public class MainController implements Initializable {
         keyOne.setText(BlindRSASignatureWithMenu.getN().toString());
         keyTwo.setText(BlindRSASignatureWithMenu.getE().toString());
         keyThree.setText(BlindRSASignatureWithMenu.getD().toString());
-        keyFour.setText(BlindRSASignatureWithMenu.getR().toString());
+        keyFour.setText(BlindRSASignatureWithMenu.getK().toString());
     }
 
     @FXML
@@ -120,7 +115,7 @@ public class MainController implements Initializable {
         if (bytesFromFile != null) {
             String hex = bytesToHex(bytesFromSignature);
             areaEncrypted.setText(hex);
-            keyFour.setText(rsa.getR().toString());
+            keyFour.setText(rsa.getK().toString());
         } else {
             areaEncrypted.setText("Błąd podpisywania.");
         }

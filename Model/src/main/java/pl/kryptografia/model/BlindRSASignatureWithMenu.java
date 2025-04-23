@@ -4,7 +4,6 @@ import java.math.BigInteger;
 import java.io.*;
 import java.security.NoSuchAlgorithmException;
 import java.util.Random;
-import java.util.Scanner;
 
 import java.security.MessageDigest;
 
@@ -14,7 +13,7 @@ public class BlindRSASignatureWithMenu {
     private static BigInteger n; // Public key (modulus)
     private static BigInteger e; // Public key (exponent)
     private static BigInteger d; // Private key (exponent)
-    private static BigInteger r; // Private key (exponent)
+    private static BigInteger k; // Zaslepka k
 
     public static BigInteger getN() {
         return n;
@@ -28,8 +27,8 @@ public class BlindRSASignatureWithMenu {
         return d;
     }
 
-    public static BigInteger getR() {
-        return r;
+    public static BigInteger getK() {
+        return k;
     }
 
     public BlindRSASignatureWithMenu() {
@@ -52,8 +51,8 @@ public class BlindRSASignatureWithMenu {
 
         Random rand = new Random();
         do {
-            r = new BigInteger(n.bitLength(), rand);
-        } while (!r.gcd(n).equals(BigInteger.ONE));
+            k = new BigInteger(n.bitLength(), rand);
+        } while (!k.gcd(n).equals(BigInteger.ONE));
     }
 
     // 1. Podpisanie pliku
@@ -82,14 +81,14 @@ public class BlindRSASignatureWithMenu {
         // Generowanie losowej liczby r
         Random rand = new Random();
         do {
-            r = new BigInteger(n.bitLength(), rand);
-        } while (!r.gcd(n).equals(BigInteger.ONE));
+            k = new BigInteger(n.bitLength(), rand);
+        } while (!k.gcd(n).equals(BigInteger.ONE));
         //koniec generowania losowej liczby r
 
 
-        BigInteger blinded = m.multiply(r.modPow(e, n)).mod(n);
+        BigInteger blinded = m.multiply(k.modPow(e, n)).mod(n);
         BigInteger blindSignature = blinded.modPow(d, n);
-        BigInteger rInv = r.modInverse(n);
+        BigInteger rInv = k.modInverse(n);
         BigInteger signature = blindSignature.multiply(rInv).mod(n);
 
         return signature.toByteArray();
