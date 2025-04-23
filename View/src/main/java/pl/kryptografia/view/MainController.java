@@ -280,9 +280,9 @@ public class MainController implements Initializable {
         keyThree.setText(BlindRSASignatureWithMenu.getD().toString());
         keyFour.setText("");
 //        keyOne.setDisable(true);
-//        keyTwo.setDisable(true);
+        keyTwo.setDisable(true);
 //        keyThree.setDisable(true);
-//        keyFour.setDisable(true);
+        keyFour.setDisable(true);
         radioFile.setToggleGroup(fileOrTextGroup);
         radioText.setToggleGroup(fileOrTextGroup);
         areaPlain.setPromptText("Wpisz tekst do podpisania.");

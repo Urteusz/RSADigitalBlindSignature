@@ -11,7 +11,7 @@ public class MainApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("main-view.fxml"));
-        Scene scene = new Scene(fxmlLoader.load(), 720, 500);
+        Scene scene = new Scene(fxmlLoader.load(), 1024, 640);
         stage.setTitle("DESX Encryption and Decryption Tool");
         stage.setScene(scene);
         stage.show();

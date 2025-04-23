@@ -9,42 +9,43 @@
 <?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.layout.AnchorPane?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="632.0" prefWidth="762.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="pl.kryptografia.view.MainController">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="640.0" prefWidth="1024.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="pl.kryptografia.view.MainController">
    <children>
-      <Label alignment="CENTER" layoutX="1.0" layoutY="15.0" prefHeight="20.0" prefWidth="148.0" text="Value of N" />
-      <Label alignment="CENTER" layoutX="1.0" layoutY="47.0" prefHeight="20.0" prefWidth="148.0" text="Value of E" />
-      <Label alignment="CENTER" layoutX="1.0" layoutY="78.0" prefHeight="20.0" prefWidth="148.0" text="Value of D" />
-      <TextField fx:id="keyOne" layoutX="146.0" layoutY="12.0" prefHeight="25.0" prefWidth="600.0">
+      <Label alignment="CENTER" layoutY="40.0" prefHeight="20.0" prefWidth="148.0" text="MOD N" />
+      <Label alignment="CENTER" layoutY="72.0" prefHeight="20.0" prefWidth="148.0" text="Public exponent E" />
+      <Label alignment="CENTER" layoutY="103.0" prefHeight="20.0" prefWidth="148.0" text="Private exponent D" />
+      <TextField fx:id="keyOne" layoutX="145.0" layoutY="37.0" prefHeight="25.0" prefWidth="850.0">
          <opaqueInsets>
             <Insets />
          </opaqueInsets>
       </TextField>
-      <TextField fx:id="keyTwo" layoutX="146.0" layoutY="44.0" prefHeight="25.0" prefWidth="600.0" />
-      <TextField fx:id="keyThree" layoutX="146.0" layoutY="75.0" prefHeight="25.0" prefWidth="600.0" />
-      <Button fx:id="btnGenKeys" layoutX="344.0" layoutY="144.0" mnemonicParsing="false" onAction="#onGenerateKeysClick" prefHeight="25.0" prefWidth="200.0" text="Generate keys" />
-      <Label alignment="CENTER" layoutX="16.0" layoutY="191.0" prefHeight="25.0" prefWidth="223.0" text="Open plain text file" />
-      <Label alignment="CENTER" layoutX="520.0" layoutY="186.0" prefHeight="25.0" prefWidth="223.0" text="Open encrypted text file" />
-      <Button fx:id="btnOpenPlain" layoutX="193.0" layoutY="216.0" mnemonicParsing="false" onAction="#openFileClick" text="Open" />
-      <TextField fx:id="textOpenPlain" layoutX="16.0" layoutY="216.0" prefHeight="25.0" prefWidth="170.0" />
-      <Button fx:id="btnOpenEncrypted" layoutX="697.0" layoutY="211.0" mnemonicParsing="false" onAction="#openFileSinature" text="Open" />
-      <TextField fx:id="textOpenEncrypted" layoutX="520.0" layoutY="211.0" prefHeight="25.0" prefWidth="170.0" />
-      <TextArea fx:id="areaPlain" layoutX="16.0" layoutY="309.0" prefHeight="200.0" prefWidth="250.0" wrapText="true" />
-      <RadioButton fx:id="radioFile" layoutX="362.0" layoutY="341.0" mnemonicParsing="false" onAction="#onFileRadio" text="File">
+      <TextField fx:id="keyTwo" layoutX="145.0" layoutY="69.0" prefHeight="25.0" prefWidth="850.0" />
+      <TextField fx:id="keyThree" layoutX="145.0" layoutY="100.0" prefHeight="25.0" prefWidth="850.0" />
+      <Button fx:id="btnGenKeys" layoutX="411.0" layoutY="170.0" mnemonicParsing="false" onAction="#onGenerateKeysClick" prefHeight="25.0" prefWidth="200.0" text="Generate keys" />
+      <Label alignment="CENTER" layoutX="15.0" layoutY="216.0" prefHeight="25.0" prefWidth="340.0" text="Open plain text file" />
+      <Label alignment="CENTER" layoutX="657.0" layoutY="209.0" prefHeight="25.0" prefWidth="340.0" text="Open encrypted text file" />
+      <Button fx:id="btnOpenPlain" layoutX="309.0" layoutY="241.0" mnemonicParsing="false" onAction="#openFileClick" text="Open" />
+      <TextField fx:id="textOpenPlain" layoutX="15.0" layoutY="241.0" prefHeight="25.0" prefWidth="280.0" />
+      <Button fx:id="btnOpenEncrypted" layoutX="950.0" layoutY="234.0" mnemonicParsing="false" onAction="#openFileSinature" prefHeight="25.0" prefWidth="46.0" text="Open" />
+      <TextField fx:id="textOpenEncrypted" layoutX="657.0" layoutY="234.0" prefHeight="25.0" prefWidth="280.0" />
+      <TextArea fx:id="areaPlain" layoutX="13.0" layoutY="289.0" prefHeight="200.0" prefWidth="340.0" wrapText="true" />
+      <RadioButton fx:id="radioFile" layoutX="490.0" layoutY="321.0" mnemonicParsing="false" onAction="#onFileRadio" text="File">
          <toggleGroup>
             <ToggleGroup fx:id="fileOrTextGroup" />
          </toggleGroup>
       </RadioButton>
-      <RadioButton fx:id="radioText" layoutX="360.0" layoutY="364.0" mnemonicParsing="false" onAction="#onTextRadio" text="Text" toggleGroup="$fileOrTextGroup" />
-      <Button fx:id="btnSign" layoutX="323.0" layoutY="400.0" mnemonicParsing="false" onAction="#onSignClick" prefHeight="25.0" prefWidth="117.0" text="Podpisz -&gt;" />
-      <Button fx:id="btnDecrypt" layoutX="323.0" layoutY="431.0" mnemonicParsing="false" onAction="#onCheckSing" text="&lt;- Sprawdź podpis" />
-      <TextArea fx:id="areaEncrypted" layoutX="498.0" layoutY="300.0" prefHeight="200.0" prefWidth="250.0" wrapText="true" />
-      <Label alignment="CENTER" layoutX="16.0" layoutY="277.0" prefHeight="17.0" prefWidth="200.0" text="Save plain text message" />
-      <Label alignment="CENTER" layoutX="543.0" layoutY="264.0" prefHeight="17.0" prefWidth="200.0" text="Save encrypted message" />
-      <Button fx:id="btnSavePlain" layoutX="222.0" layoutY="526.0" mnemonicParsing="false" onAction="#savePlainClick" prefHeight="25.0" prefWidth="44.0" text="Save" />
-      <TextField fx:id="textSavePlain" layoutX="16.0" layoutY="526.0" prefHeight="25.0" prefWidth="193.0" />
-      <Button fx:id="btnSaveEncrypted" layoutX="704.0" layoutY="521.0" mnemonicParsing="false" onAction="#saveEncryptedClick" prefHeight="25.0" prefWidth="44.0" text="Save" />
-      <TextField fx:id="textSaveEncrypted" layoutX="498.0" layoutY="521.0" prefHeight="25.0" prefWidth="193.0" />
-      <Label alignment="CENTER" layoutX="1.0" layoutY="112.0" prefHeight="20.0" prefWidth="148.0" text="Value of R" />
-      <TextField fx:id="keyFour" layoutX="148.0" layoutY="109.0" prefHeight="25.0" prefWidth="600.0" />
+      <RadioButton fx:id="radioText" layoutX="488.0" layoutY="344.0" mnemonicParsing="false" onAction="#onTextRadio" text="Text" toggleGroup="$fileOrTextGroup" />
+      <Button fx:id="btnSign" layoutX="451.0" layoutY="380.0" mnemonicParsing="false" onAction="#onSignClick" prefHeight="25.0" prefWidth="117.0" text="Podpisz -&gt;" />
+      <Button fx:id="btnDecrypt" layoutX="451.0" layoutY="411.0" mnemonicParsing="false" onAction="#onCheckSing" text="&lt;- Sprawdź podpis" />
+      <TextArea fx:id="areaEncrypted" layoutX="653.0" layoutY="278.0" prefHeight="200.0" prefWidth="340.0" wrapText="true" />
+      <Label alignment="CENTER" layoutX="15.0" layoutY="497.0" prefHeight="17.0" prefWidth="340.0" text="Save plain text message" />
+      <Label alignment="CENTER" layoutX="657.0" layoutY="489.0" prefHeight="17.0" prefWidth="340.0" text="Save encrypted message" />
+      <Button fx:id="btnSavePlain" layoutX="310.0" layoutY="519.0" mnemonicParsing="false" onAction="#savePlainClick" prefHeight="25.0" prefWidth="44.0" text="Save" />
+      <TextField fx:id="textSavePlain" layoutX="13.0" layoutY="519.0" prefHeight="25.0" prefWidth="280.0" />
+      <Button fx:id="btnSaveEncrypted" layoutX="951.0" layoutY="519.0" mnemonicParsing="false" onAction="#saveEncryptedClick" prefHeight="25.0" prefWidth="44.0" text="Save" />
+      <TextField fx:id="textSaveEncrypted" layoutX="657.0" layoutY="519.0" prefHeight="25.0" prefWidth="280.0" />
+      <Label alignment="CENTER" layoutY="137.0" prefHeight="20.0" prefWidth="148.0" text="Blinder k" />
+      <TextField fx:id="keyFour" layoutX="147.0" layoutY="134.0" prefHeight="25.0" prefWidth="850.0" />
+      <Label alignment="CENTER" layoutX="15.0" layoutY="14.0" prefHeight="17.0" prefWidth="982.0" text="Blind Signature RSA " />
    </children>
 </AnchorPane>

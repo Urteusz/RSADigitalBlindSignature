@@ -107,7 +107,7 @@ public class BlindRSASignatureWithMenu {
 //        byte[] hash = sha1.digest(signedFileBytes);
 //
 
-        MessageDigest digest = null;
+        MessageDigest digest;
         try {
             digest = MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException ex) {
