@@ -65,16 +65,16 @@ public class BlindRSASignature {
     }
 
     // 1. Podpisanie pliku
-    public static byte[] signData(byte[] fileBytes) {
-        if (fileBytes == null) {
-            System.out.println("Błąd odczytu pliku.");
+    public static byte[] signData(byte[] bytes) {
+        if (bytes == null) {
+            System.out.println("Błąd odczytu bajtów.");
             return null;
         }
 
         byte[] hash;
         try{
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            hash = digest.digest(fileBytes);
+            hash = digest.digest(bytes);
         }
         catch (Exception e){
             System.out.println("Błąd SHA-256: " + e.getMessage());
@@ -83,12 +83,10 @@ public class BlindRSASignature {
 
         BigInteger m = new BigInteger(1, hash);
 
-        // Generowanie losowej liczby r
         Random rand = new Random();
         do {
             k = new BigInteger(n.bitLength(), rand);
         } while (!k.gcd(n).equals(BigInteger.ONE));
-        //koniec generowania losowej liczby r
 
 
         BigInteger blinded = m.multiply(k.modPow(e, n)).mod(n);
