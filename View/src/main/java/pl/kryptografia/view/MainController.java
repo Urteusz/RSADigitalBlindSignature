@@ -133,42 +133,78 @@ public class MainController implements Initializable {
 
     @FXML
     private void onLoadKeys() {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Wczytaj klucz");
-        fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Klucz (*.priv, *.pub)", "*.priv", "*.pub")
+        // Wczytaj klucz prywatny
+        FileChooser privateKeyChooser = new FileChooser();
+        privateKeyChooser.setTitle("Wczytaj klucz prywatny");
+        privateKeyChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Klucz prywatny (*.priv)", "*.priv")
         );
 
-        File file = fileChooser.showOpenDialog(new Stage());
-        if (file == null) return;
+        File privateKeyFile = privateKeyChooser.showOpenDialog(new Stage());
+        if (privateKeyFile == null) {
+            showAlert("Błąd", "Nie wybrano klucza prywatnego.", Alert.AlertType.ERROR);
+            return;
+        }
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(privateKeyFile))) {
             String firstLine = reader.readLine();
             String secondLine = reader.readLine();
 
             if (firstLine == null || secondLine == null) {
-                showAlert("Błąd", "Plik klucza jest niekompletny", Alert.AlertType.ERROR);
+                showAlert("Błąd", "Plik klucza prywatnego jest niekompletny.", Alert.AlertType.ERROR);
                 return;
             }
 
-            BigInteger exp = new BigInteger(firstLine.trim());
+            BigInteger d = new BigInteger(firstLine.trim());
             BigInteger n = new BigInteger(secondLine.trim());
 
+            BlindRSASignature.setD(d);
             BlindRSASignature.setN(n);
+            keyThree.setText(d.toString());
             keyOne.setText(n.toString());
+        } catch (IOException | NumberFormatException e) {
+            showAlert("Błąd", "Wczytanie klucza prywatnego nie powiodło się: " + e.getMessage(), Alert.AlertType.ERROR);
+            return;
+        }
 
-            if (file.getName().endsWith(".priv")) {
-                BlindRSASignature.setD(exp);
-                keyThree.setText(exp.toString());
-            } else if (file.getName().endsWith(".pub")) {
-                BlindRSASignature.setE(exp);
-                keyTwo.setText(exp.toString());
-            } else {
-                showAlert("Błąd", "Nieznany typ pliku klucza", Alert.AlertType.ERROR);
+        // Wczytaj klucz publiczny
+        FileChooser publicKeyChooser = new FileChooser();
+        publicKeyChooser.setTitle("Wczytaj klucz publiczny");
+        publicKeyChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Klucz publiczny (*.pub)", "*.pub")
+        );
+
+        File publicKeyFile = publicKeyChooser.showOpenDialog(new Stage());
+        if (publicKeyFile == null) {
+            showAlert("Błąd", "Nie wybrano klucza publicznego.", Alert.AlertType.ERROR);
+            return;
+        }
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(publicKeyFile))) {
+            String firstLine = reader.readLine();
+            String secondLine = reader.readLine();
+
+            if (firstLine == null || secondLine == null) {
+                showAlert("Błąd", "Plik klucza publicznego jest niekompletny.", Alert.AlertType.ERROR);
+                return;
             }
 
+            BigInteger e = new BigInteger(firstLine.trim());
+            BigInteger n = new BigInteger(secondLine.trim());
+
+            if (!BlindRSASignature.getN().equals(n)) {
+                showAlert(
+                        "Błąd",
+                        "Klucz publiczny i prywatny muszą używać tego samego modułu N.",
+                        Alert.AlertType.ERROR
+                );
+                return;
+            }
+
+            BlindRSASignature.setE(e);
+            keyTwo.setText(e.toString());
         } catch (IOException | NumberFormatException e) {
-            showAlert("Błąd", "Wczytanie klucza nie powiodło się: " + e.getMessage(), Alert.AlertType.ERROR);
+            showAlert("Błąd", "Wczytanie klucza publicznego nie powiodło się: " + e.getMessage(), Alert.AlertType.ERROR);
         }
     }
 
