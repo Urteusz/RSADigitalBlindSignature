@@ -8,7 +8,7 @@ import java.util.Random;
 import java.security.MessageDigest;
 
 
-public class BlindRSASignatureWithMenu {
+public class BlindRSASignature {
 
     private static BigInteger n; // Public key (modulus)
     private static BigInteger e; // Public key (exponent)
@@ -18,20 +18,29 @@ public class BlindRSASignatureWithMenu {
     public static BigInteger getN() {
         return n;
     }
+    public static void setN(BigInteger n) {
+        BlindRSASignature.n = n;
+    }
 
     public static BigInteger getE() {
         return e;
     }
+    public static void setE(BigInteger e) {
+        BlindRSASignature.e = e;
+    }
 
     public static BigInteger getD() {
         return d;
+    }
+    public static void setD(BigInteger d) {
+        BlindRSASignature.d = d;
     }
 
     public static BigInteger getK() {
         return k;
     }
 
-    public BlindRSASignatureWithMenu() {
+    public BlindRSASignature() {
         generateKeys();
     }
 
@@ -61,10 +70,6 @@ public class BlindRSASignatureWithMenu {
             System.out.println("Błąd odczytu pliku.");
             return null;
         }
-
-//        SHA1 sha1 = new SHA1();
-//        byte[] hash = sha1.digest(fileBytes); // podpisujemy skrót SHA-1
-//        BigInteger m = new BigInteger(1, hash);
 
         byte[] hash;
         try{

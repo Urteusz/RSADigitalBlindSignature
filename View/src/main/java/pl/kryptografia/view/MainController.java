@@ -1,9 +1,6 @@
 package pl.kryptografia.view;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 
 import javafx.stage.Stage;
 import javafx.stage.FileChooser;
@@ -14,12 +11,13 @@ import javafx.scene.control.*;
 import pl.kryptografia.model.*;
 
 
+import java.math.BigInteger;
 import java.net.URL;
 import java.util.ResourceBundle;
 
 public class MainController implements Initializable {
 
-    BlindRSASignatureWithMenu rsa;
+    BlindRSASignature rsa;
     byte[] bytesFromFile;
     byte[] bytesFromSignature;
 
@@ -62,10 +60,10 @@ public class MainController implements Initializable {
     @FXML
     private void onGenerateKeysClick() {
         rsa.generateKeys();
-        keyOne.setText(BlindRSASignatureWithMenu.getN().toString());
-        keyTwo.setText(BlindRSASignatureWithMenu.getE().toString());
-        keyThree.setText(BlindRSASignatureWithMenu.getD().toString());
-        keyFour.setText(BlindRSASignatureWithMenu.getK().toString());
+        keyOne.setText(BlindRSASignature.getN().toString());
+        keyTwo.setText(BlindRSASignature.getE().toString());
+        keyThree.setText(BlindRSASignature.getD().toString());
+        keyFour.setText(BlindRSASignature.getK().toString());
     }
 
     @FXML
@@ -132,6 +130,80 @@ public class MainController implements Initializable {
         areaPlain.setPromptText("Wpisz dane do podpisania");
         areaPlain.setDisable(false);
     }
+
+    @FXML
+    private void onLoadKeys() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Wczytaj klucz");
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Klucz (*.priv, *.pub)", "*.priv", "*.pub")
+        );
+
+        File file = fileChooser.showOpenDialog(new Stage());
+        if (file == null) return;
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String firstLine = reader.readLine();
+            String secondLine = reader.readLine();
+
+            if (firstLine == null || secondLine == null) {
+                showAlert("Błąd", "Plik klucza jest niekompletny", Alert.AlertType.ERROR);
+                return;
+            }
+
+            BigInteger exp = new BigInteger(firstLine.trim());
+            BigInteger n = new BigInteger(secondLine.trim());
+
+            BlindRSASignature.setN(n);
+            keyOne.setText(n.toString());
+
+            if (file.getName().endsWith(".priv")) {
+                BlindRSASignature.setD(exp);
+                keyThree.setText(exp.toString());
+            } else if (file.getName().endsWith(".pub")) {
+                BlindRSASignature.setE(exp);
+                keyTwo.setText(exp.toString());
+            } else {
+                showAlert("Błąd", "Nieznany typ pliku klucza", Alert.AlertType.ERROR);
+            }
+
+        } catch (IOException | NumberFormatException e) {
+            showAlert("Błąd", "Wczytanie klucza nie powiodło się: " + e.getMessage(), Alert.AlertType.ERROR);
+        }
+    }
+
+
+    @FXML
+    private void onSaveKeys() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Zapisz klucz prywatny");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Private Key (*.priv)", "*.priv"));
+        File privFile = fileChooser.showSaveDialog(new Stage());
+
+        if (privFile != null) {
+            try (PrintWriter writer = new PrintWriter(privFile)) {
+                writer.println(BlindRSASignature.getD().toString());
+                writer.println(BlindRSASignature.getN().toString());
+            } catch (IOException e) {
+                showAlert("Błąd", "Nie udało się zapisać klucza prywatnego: " + e.getMessage(), Alert.AlertType.ERROR);
+            }
+        }
+
+        fileChooser.setTitle("Zapisz klucz publiczny");
+        fileChooser.getExtensionFilters().clear();
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Public Key (*.pub)", "*.pub"));
+        File pubFile = fileChooser.showSaveDialog(new Stage());
+
+        if (pubFile != null) {
+            try (PrintWriter writer = new PrintWriter(pubFile)) {
+                writer.println(BlindRSASignature.getE().toString());
+                writer.println(BlindRSASignature.getN().toString());
+            } catch (IOException e) {
+                showAlert("Błąd", "Nie udało się zapisać klucza publicznego: " + e.getMessage(), Alert.AlertType.ERROR);
+            }
+        }
+    }
+
 
 
     private void writeFile(byte[] content, int type) {
@@ -273,11 +345,11 @@ public class MainController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        rsa = new BlindRSASignatureWithMenu();
+        rsa = new BlindRSASignature();
         ToggleGroup fileOrTextGroup = new ToggleGroup();
-        keyOne.setText(BlindRSASignatureWithMenu.getN().toString());
-        keyTwo.setText(BlindRSASignatureWithMenu.getE().toString());
-        keyThree.setText(BlindRSASignatureWithMenu.getD().toString());
+        keyOne.setText(BlindRSASignature.getN().toString());
+        keyTwo.setText(BlindRSASignature.getE().toString());
+        keyThree.setText(BlindRSASignature.getD().toString());
         keyFour.setText("");
 //        keyOne.setDisable(true);
         keyTwo.setDisable(true);

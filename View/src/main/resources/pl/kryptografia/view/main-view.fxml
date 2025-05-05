@@ -21,7 +21,7 @@
       </TextField>
       <TextField fx:id="keyTwo" layoutX="145.0" layoutY="69.0" prefHeight="25.0" prefWidth="850.0" />
       <TextField fx:id="keyThree" layoutX="145.0" layoutY="100.0" prefHeight="25.0" prefWidth="850.0" />
-      <Button fx:id="btnGenKeys" layoutX="411.0" layoutY="170.0" mnemonicParsing="false" onAction="#onGenerateKeysClick" prefHeight="25.0" prefWidth="200.0" text="Generate keys" />
+      <Button fx:id="btnGenKeys" layoutX="406.0" layoutY="170.0" mnemonicParsing="false" onAction="#onGenerateKeysClick" prefHeight="25.0" prefWidth="200.0" text="Generate keys" />
       <Label alignment="CENTER" layoutX="15.0" layoutY="216.0" prefHeight="25.0" prefWidth="340.0" text="Open plain text file" />
       <Label alignment="CENTER" layoutX="657.0" layoutY="209.0" prefHeight="25.0" prefWidth="340.0" text="Open encrypted text file" />
       <Button fx:id="btnOpenPlain" layoutX="309.0" layoutY="241.0" mnemonicParsing="false" onAction="#openFileClick" text="Open" />
@@ -47,5 +47,7 @@
       <Label alignment="CENTER" layoutY="137.0" prefHeight="20.0" prefWidth="148.0" text="Blinder k" />
       <TextField fx:id="keyFour" layoutX="147.0" layoutY="134.0" prefHeight="25.0" prefWidth="850.0" />
       <Label alignment="CENTER" layoutX="15.0" layoutY="14.0" prefHeight="17.0" prefWidth="982.0" text="Blind Signature RSA " />
+      <Button layoutX="206.0" layoutY="170.0" mnemonicParsing="false" onAction="#onLoadKeys" prefHeight="25.0" prefWidth="148.0" text="Load Keys" />
+      <Button layoutX="653.0" layoutY="170.0" mnemonicParsing="false" onAction="#onSaveKeys" prefHeight="25.0" prefWidth="148.0" text="Save Keys" />
    </children>
 </AnchorPane>
