@@ -1,62 +1,48 @@
 package pl.kryptografia.view;
 
 import java.io.*;
-
-import javafx.stage.Stage;
-import javafx.stage.FileChooser;
-import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
-import javafx.scene.control.*;
-
-import pl.kryptografia.model.*;
-
-
 import java.math.BigInteger;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.scene.control.*;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+
+import pl.kryptografia.model.BlindRSASignature;
+
 public class MainController implements Initializable {
 
-    BlindRSASignature rsa;
-    byte[] bytesFromFile;
-    byte[] bytesFromSignature;
+    // Główna instancja klasy obsługującej podpisywanie RSA z oślepieniem
+    private BlindRSASignature rsa;
 
-    @FXML
-    private TextField keyOne;
+    // Bufory na dane z plików
+    private byte[] bytesFromFile;
+    private byte[] bytesFromSignature;
 
-    @FXML
-    private TextField keyTwo;
+    // Pola tekstowe dla kluczy
+    @FXML private TextField keyOne;    // Moduł N
+    @FXML private TextField keyTwo;    // Klucz publiczny E
+    @FXML private TextField keyThree;  // Klucz prywatny D
+    @FXML private TextField keyFour;   // Losowa liczba K
 
-    @FXML
-    private TextField keyThree;
+    // Obszary tekstowe na dane i podpis
+    @FXML private TextArea areaPlain;
+    @FXML private TextArea areaEncrypted;
 
-    @FXML
-    private TextField keyFour;
+    // Pola tekstowe na ścieżki plików
+    @FXML private TextField textOpenPlain;
+    @FXML private TextField textOpenEncrypted;
+    @FXML private TextField textSavePlain;
+    @FXML private TextField textSaveEncrypted;
 
-    @FXML
-    private TextArea areaPlain;
+    // Radio przyciski do wyboru trybu wejścia/wyjścia
+    @FXML private RadioButton radioFile;
+    @FXML private RadioButton radioText;
 
-    @FXML
-    private TextArea areaEncrypted;
-
-    @FXML
-    private TextField textOpenPlain;
-
-    @FXML
-    private TextField textOpenEncrypted;
-
-    @FXML
-    private TextField textSavePlain;
-
-    @FXML
-    private TextField textSaveEncrypted;
-
-    @FXML
-    private RadioButton radioFile;
-
-    @FXML
-    private RadioButton radioText;
-
+    // Generowanie nowych kluczy i aktualizacja pól
     @FXML
     private void onGenerateKeysClick() {
         rsa.generateKeys();
@@ -66,222 +52,78 @@ public class MainController implements Initializable {
         keyFour.setText(BlindRSASignature.getK().toString());
     }
 
+    // Wczytanie danych z pliku do podpisania
     @FXML
     private void openFileClick() {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Wybierz plik do otwarcia");
-
-        File file = fileChooser.showOpenDialog(new Stage());
-
+        File file = chooseFile("Wybierz plik do otwarcia");
         if (file != null) {
-            this.bytesFromFile = readFile(file);
+            bytesFromFile = readFile(file);
             textOpenPlain.setText(file.getAbsolutePath());
             radioFile.setSelected(true);
             areaPlain.setDisable(true);
             areaEncrypted.setDisable(true);
-
             areaPlain.setPromptText("Plik zostal wczytany pomyslnie");
         }
     }
 
+    // Wczytanie podpisu z pliku
     @FXML
     private void openFileSinature() {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Wybierz plik do otwarcia");
-
-        File file = fileChooser.showOpenDialog(new Stage());
-
+        File file = chooseFile("Wybierz plik do otwarcia");
         if (file != null) {
-            this.bytesFromSignature = readFile(file);
+            bytesFromSignature = readFile(file);
             textOpenEncrypted.setText(file.getAbsolutePath());
-
             areaEncrypted.setText(bytesToHex(bytesFromSignature));
         }
     }
 
-    @FXML
-    private void onSignClick() {
-
-        if (radioText.isSelected()) {
-            String text = areaPlain.getText();
-            bytesFromFile = text.getBytes();
-            bytesFromSignature = rsa.signData(bytesFromFile);
-        } else if (radioFile.isSelected()) {
-            bytesFromSignature = rsa.signData(bytesFromFile);
-        }
-
-        if (bytesFromFile != null) {
-            String hex = bytesToHex(bytesFromSignature);
-            areaEncrypted.setText(hex);
-            keyFour.setText(rsa.getK().toString());
-        } else {
-            areaEncrypted.setText("Błąd podpisywania.");
-        }
-    }
-
-    @FXML
-    private void onFileRadio() {
-        areaPlain.setPromptText("Otworz plik do podpisania");
-        areaPlain.setDisable(true);
-    }
-
-    @FXML
-    private void onTextRadio() {
-        areaPlain.setPromptText("Wpisz dane do podpisania");
-        areaPlain.setDisable(false);
-    }
-
+    // Wczytanie kluczy z plików .priv i .pub
     @FXML
     private void onLoadKeys() {
-        // Wczytaj klucz prywatny
-        FileChooser privateKeyChooser = new FileChooser();
-        privateKeyChooser.setTitle("Wczytaj klucz prywatny");
-        privateKeyChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Klucz prywatny (*.priv)", "*.priv")
-        );
-
-        File privateKeyFile = privateKeyChooser.showOpenDialog(new Stage());
-        if (privateKeyFile == null) {
+        File priv = chooseFile("Wczytaj klucz prywatny", "Klucz prywatny (*.priv)", "*.priv");
+        if (priv == null) {
             showAlert("Błąd", "Nie wybrano klucza prywatnego.", Alert.AlertType.ERROR);
             return;
         }
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(privateKeyFile))) {
-            String firstLine = reader.readLine();
-            String secondLine = reader.readLine();
-
-            if (firstLine == null || secondLine == null) {
-                showAlert("Błąd", "Plik klucza prywatnego jest niekompletny.", Alert.AlertType.ERROR);
-                return;
-            }
-
-            BigInteger d = new BigInteger(firstLine.trim());
-            BigInteger n = new BigInteger(secondLine.trim());
-
+        try (BufferedReader reader = new BufferedReader(new FileReader(priv))) {
+            BigInteger d = new BigInteger(reader.readLine().trim());
+            BigInteger n = new BigInteger(reader.readLine().trim());
             BlindRSASignature.setD(d);
             BlindRSASignature.setN(n);
             keyThree.setText(d.toString());
             keyOne.setText(n.toString());
-        } catch (IOException | NumberFormatException e) {
-            showAlert("Błąd", "Wczytanie klucza prywatnego nie powiodło się: " + e.getMessage(), Alert.AlertType.ERROR);
+        } catch (Exception e) {
+            showAlert("Błąd", "Błąd wczytywania klucza prywatnego: " + e.getMessage(), Alert.AlertType.ERROR);
             return;
         }
 
-        // Wczytaj klucz publiczny
-        FileChooser publicKeyChooser = new FileChooser();
-        publicKeyChooser.setTitle("Wczytaj klucz publiczny");
-        publicKeyChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Klucz publiczny (*.pub)", "*.pub")
-        );
-
-        File publicKeyFile = publicKeyChooser.showOpenDialog(new Stage());
-        if (publicKeyFile == null) {
+        File pub = chooseFile("Wczytaj klucz publiczny", "Klucz publiczny (*.pub)", "*.pub");
+        if (pub == null) {
             showAlert("Błąd", "Nie wybrano klucza publicznego.", Alert.AlertType.ERROR);
             return;
         }
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(publicKeyFile))) {
-            String firstLine = reader.readLine();
-            String secondLine = reader.readLine();
-
-            if (firstLine == null || secondLine == null) {
-                showAlert("Błąd", "Plik klucza publicznego jest niekompletny.", Alert.AlertType.ERROR);
-                return;
-            }
-
-            BigInteger e = new BigInteger(firstLine.trim());
-            BigInteger n = new BigInteger(secondLine.trim());
-
+        try (BufferedReader reader = new BufferedReader(new FileReader(pub))) {
+            BigInteger e = new BigInteger(reader.readLine().trim());
+            BigInteger n = new BigInteger(reader.readLine().trim());
             if (!BlindRSASignature.getN().equals(n)) {
-                showAlert(
-                        "Błąd",
-                        "Klucz publiczny i prywatny muszą używać tego samego modułu N.",
-                        Alert.AlertType.ERROR
-                );
+                showAlert("Błąd", "Klucz publiczny i prywatny mają różne N.", Alert.AlertType.ERROR);
                 return;
             }
-
             BlindRSASignature.setE(e);
             keyTwo.setText(e.toString());
-        } catch (IOException | NumberFormatException e) {
-            showAlert("Błąd", "Wczytanie klucza publicznego nie powiodło się: " + e.getMessage(), Alert.AlertType.ERROR);
+        } catch (Exception e) {
+            showAlert("Błąd", "Błąd wczytywania klucza publicznego: " + e.getMessage(), Alert.AlertType.ERROR);
         }
     }
 
-
-    @FXML
-    private void onSaveKeys() {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Zapisz klucz prywatny");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Private Key (*.priv)", "*.priv"));
-        File privFile = fileChooser.showSaveDialog(new Stage());
-
-        if (privFile != null) {
-            try (PrintWriter writer = new PrintWriter(privFile)) {
-                writer.println(BlindRSASignature.getD().toString());
-                writer.println(BlindRSASignature.getN().toString());
-            } catch (IOException e) {
-                showAlert("Błąd", "Nie udało się zapisać klucza prywatnego: " + e.getMessage(), Alert.AlertType.ERROR);
-            }
-        }
-
-        fileChooser.setTitle("Zapisz klucz publiczny");
-        fileChooser.getExtensionFilters().clear();
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Public Key (*.pub)", "*.pub"));
-        File pubFile = fileChooser.showSaveDialog(new Stage());
-
-        if (pubFile != null) {
-            try (PrintWriter writer = new PrintWriter(pubFile)) {
-                writer.println(BlindRSASignature.getE().toString());
-                writer.println(BlindRSASignature.getN().toString());
-            } catch (IOException e) {
-                showAlert("Błąd", "Nie udało się zapisać klucza publicznego: " + e.getMessage(), Alert.AlertType.ERROR);
-            }
-        }
-    }
-
-
-
-    private void writeFile(byte[] content, int type) {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Zapisz plik");
-
-        // Add appropriate extension filters
-        if (type == 1) {
-            fileChooser.getExtensionFilters().add(
-                    new FileChooser.ExtensionFilter("Text files", "*.txt"));
-        } else {
-            fileChooser.getExtensionFilters().add(
-                    new FileChooser.ExtensionFilter("Signature files", "*.sig"));
-        }
-
-        File file = fileChooser.showSaveDialog(new Stage());
-
-        if (file != null) {
-            try {
-                FileOutputStream fos = new FileOutputStream(file);
-                fos.write(content);
-                fos.close();
-
-                // Update the appropriate text field
-                if (type == 1) {
-                    textSavePlain.setText(file.getAbsolutePath());
-                } else {
-                    textSaveEncrypted.setText(file.getAbsolutePath());
-                }
-            } catch (IOException e) {
-                showAlert("Błąd", "Błąd zapisu do pliku: " + e.getMessage(), Alert.AlertType.ERROR);
-            }
-        }
-    }
-
+    // Zapisanie danych (oryginalnych lub podpisanych) do pliku
     @FXML
     private void savePlainClick() {
         if (radioText.isSelected()) {
-            // Save text from area as bytes
             writeFile(areaPlain.getText().getBytes(), 1);
         } else if (radioFile.isSelected() && bytesFromFile != null) {
-            // Save loaded file bytes
             writeFile(bytesFromFile, 1);
         } else {
             showAlert("Błąd", "Brak danych do zapisania", Alert.AlertType.ERROR);
@@ -291,12 +133,10 @@ public class MainController implements Initializable {
     @FXML
     private void saveEncryptedClick() {
         if (radioText.isSelected()) {
-            // Try to save hex string as bytes if possible
             String text = areaEncrypted.getText().trim();
             if (!text.isEmpty()) {
                 try {
-                    byte[] bytes = hexStringToByteArray(text);
-                    writeFile(bytes, 2);
+                    writeFile(hexStringToByteArray(text), 2);
                 } catch (Exception e) {
                     writeFile(text.getBytes(), 2);
                 }
@@ -304,47 +144,127 @@ public class MainController implements Initializable {
                 showAlert("Błąd", "Brak danych do zapisania", Alert.AlertType.ERROR);
             }
         } else if (radioFile.isSelected() && bytesFromSignature != null) {
-            // Save loaded signature bytes
             writeFile(bytesFromSignature, 2);
         } else {
             showAlert("Błąd", "Brak danych do zapisania", Alert.AlertType.ERROR);
         }
     }
 
+    // Zapisanie kluczy do plików .priv i .pub
+    @FXML
+    private void onSaveKeys() {
+        saveKeyToFile("Zapisz klucz prywatny", "Private Key (*.priv)", "*.priv",
+                BlindRSASignature.getD(), BlindRSASignature.getN());
+        saveKeyToFile("Zapisz klucz publiczny", "Public Key (*.pub)", "*.pub",
+                BlindRSASignature.getE(), BlindRSASignature.getN());
+    }
 
+    // Podpisywanie danych
+    @FXML
+    private void onSignClick() {
+        if (radioText.isSelected()) {
+            bytesFromFile = areaPlain.getText().getBytes();
+        }
+        if (bytesFromFile != null) {
+            bytesFromSignature = rsa.signData(bytesFromFile);
+            areaEncrypted.setText(bytesToHex(bytesFromSignature));
+            keyFour.setText(rsa.getK().toString());
+        } else {
+            areaEncrypted.setText("Błąd podpisywania.");
+        }
+    }
+
+    // Weryfikacja podpisu
     @FXML
     private void onCheckSing() {
-        String text = areaEncrypted.getText().trim();
         if (radioText.isSelected()) {
-            String text_signed = areaPlain.getText().trim();
-            if (text.isEmpty() || text_signed.isEmpty()) {
+            if (areaPlain.getText().isEmpty() || areaEncrypted.getText().isEmpty()) {
                 showAlert("Błąd", "Brak danych do weryfikacji.", Alert.AlertType.ERROR);
                 return;
             }
-            bytesFromFile = text_signed.getBytes();
-            bytesFromSignature = hexStringToByteArray(text);
+            bytesFromFile = areaPlain.getText().getBytes();
+            bytesFromSignature = hexStringToByteArray(areaEncrypted.getText());
         }
 
-        if (bytesFromSignature != null && bytesFromFile != null) {
-            boolean isValid = rsa.verifySignature(bytesFromSignature, bytesFromFile);
-            if (isValid) {
-                showAlert("Weryfikacja podpisu", "✅ Podpis jest poprawny.", Alert.AlertType.INFORMATION);
-            } else {
-                showAlert("Weryfikacja podpisu", "❌ Podpis jest niepoprawny.", Alert.AlertType.ERROR);
-            }
+        if (bytesFromFile != null && bytesFromSignature != null) {
+            boolean result = rsa.verifySignature(bytesFromSignature, bytesFromFile);
+            showAlert("Weryfikacja podpisu",
+                    result ? "✅ Podpis jest poprawny." : "❌ Podpis jest niepoprawny.",
+                    result ? Alert.AlertType.INFORMATION : Alert.AlertType.ERROR);
         } else {
             showAlert("Błąd", "Nie udało się przeprowadzić weryfikacji.", Alert.AlertType.ERROR);
         }
     }
 
+    // Obsługa zmiany trybu wejścia
+    @FXML
+    private void onFileRadio() {
+        areaPlain.setDisable(true);
+        areaPlain.setPromptText("Otworz plik do podpisania");
+    }
 
+    @FXML
+    private void onTextRadio() {
+        areaPlain.setDisable(false);
+        areaPlain.setPromptText("Wpisz dane do podpisania");
+    }
 
-    private static byte[] readFile(File file) {
-        try {
+    // Metoda pomocnicza do wyboru pliku
+    private File chooseFile(String title) {
+        FileChooser fc = new FileChooser();
+        fc.setTitle(title);
+        return fc.showOpenDialog(new Stage());
+    }
+
+    private File chooseFile(String title, String desc, String ext) {
+        FileChooser fc = new FileChooser();
+        fc.setTitle(title);
+        fc.getExtensionFilters().add(new FileChooser.ExtensionFilter(desc, ext));
+        return fc.showOpenDialog(new Stage());
+    }
+
+    // Metoda do zapisu plików
+    private void writeFile(byte[] content, int type) {
+        FileChooser fc = new FileChooser();
+        fc.setTitle("Zapisz plik");
+        fc.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter(type == 1 ? "Text files" : "Signature files",
+                        type == 1 ? "*.txt" : "*.sig"));
+
+        File file = fc.showSaveDialog(new Stage());
+        if (file != null) {
+            try (FileOutputStream fos = new FileOutputStream(file)) {
+                fos.write(content);
+                if (type == 1) textSavePlain.setText(file.getAbsolutePath());
+                else textSaveEncrypted.setText(file.getAbsolutePath());
+            } catch (IOException e) {
+                showAlert("Błąd", "Błąd zapisu do pliku: " + e.getMessage(), Alert.AlertType.ERROR);
+            }
+        }
+    }
+
+    // Zapis kluczy do plików
+    private void saveKeyToFile(String title, String desc, String ext, BigInteger val1, BigInteger val2) {
+        FileChooser fc = new FileChooser();
+        fc.setTitle(title);
+        fc.getExtensionFilters().add(new FileChooser.ExtensionFilter(desc, ext));
+        File file = fc.showSaveDialog(new Stage());
+
+        if (file != null) {
+            try (PrintWriter writer = new PrintWriter(file)) {
+                writer.println(val1.toString());
+                writer.println(val2.toString());
+            } catch (IOException e) {
+                showAlert("Błąd", "Nie udało się zapisać klucza: " + e.getMessage(), Alert.AlertType.ERROR);
+            }
+        }
+    }
+
+    // Pomocnicze konwersje
+    private byte[] readFile(File file) {
+        try (FileInputStream fis = new FileInputStream(file)) {
             byte[] bytes = new byte[(int) file.length()];
-            FileInputStream fis = new FileInputStream(file);
             fis.read(bytes);
-            fis.close();
             return bytes;
         } catch (IOException e) {
             System.out.println("Błąd odczytu pliku: " + e.getMessage());
@@ -354,9 +274,7 @@ public class MainController implements Initializable {
 
     private String bytesToHex(byte[] bytes) {
         StringBuilder sb = new StringBuilder();
-        for (byte b : bytes) {
-            sb.append(String.format("%02X", b));
-        }
+        for (byte b : bytes) sb.append(String.format("%02X", b));
         return sb.toString();
     }
 
@@ -365,36 +283,40 @@ public class MainController implements Initializable {
         byte[] data = new byte[len / 2];
         for (int i = 0; i < len; i += 2) {
             data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-                    + Character.digit(s.charAt(i+1), 16));
+                    + Character.digit(s.charAt(i + 1), 16));
         }
         return data;
     }
 
-    private void showAlert(String title, String message, Alert.AlertType type) {
+    private void showAlert(String title, String msg, Alert.AlertType type) {
         Alert alert = new Alert(type);
         alert.setTitle(title);
         alert.setHeaderText(null);
-        alert.setContentText(message);
+        alert.setContentText(msg);
         alert.showAndWait();
     }
 
-
+    // Inicjalizacja GUI i domyślnych wartości
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         rsa = new BlindRSASignature();
-        ToggleGroup fileOrTextGroup = new ToggleGroup();
+
+        ToggleGroup group = new ToggleGroup();
+        radioFile.setToggleGroup(group);
+        radioText.setToggleGroup(group);
+        radioText.setSelected(true);
+
+        areaPlain.setPromptText("Wpisz tekst do podpisania.");
+        areaEncrypted.setPromptText("Wpisz lub otwórz podpis do walidacji.");
+
         keyOne.setText(BlindRSASignature.getN().toString());
         keyTwo.setText(BlindRSASignature.getE().toString());
         keyThree.setText(BlindRSASignature.getD().toString());
         keyFour.setText("");
-//        keyOne.setDisable(true);
+
+        keyOne.setDisable(true);
         keyTwo.setDisable(true);
-//        keyThree.setDisable(true);
+        keyThree.setDisable(true);
         keyFour.setDisable(true);
-        radioFile.setToggleGroup(fileOrTextGroup);
-        radioText.setToggleGroup(fileOrTextGroup);
-        areaPlain.setPromptText("Wpisz tekst do podpisania.");
-        areaEncrypted.setPromptText("Wpisz lub otwórz podpis do walidacji.");
-        radioText.setSelected(true);
     }
 }

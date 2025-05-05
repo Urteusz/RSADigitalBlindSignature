@@ -2,114 +2,147 @@ package pl.kryptografia.model;
 
 import java.math.BigInteger;
 import java.io.*;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Random;
 
-import java.security.MessageDigest;
-
-
+/**
+ * Klasa realizująca podpisywanie z zaślepieniem (blind signature) w oparciu o RSA.
+ */
 public class BlindRSASignature {
 
-    private static BigInteger n; // Public key (modulus)
-    private static BigInteger e; // Public key (exponent)
-    private static BigInteger d; // Private key (exponent)
-    private static BigInteger k; // Zaslepka k
+    // Klucze RSA
+    private static BigInteger n; // Moduł klucza publicznego
+    private static BigInteger e; // Wykładnik publiczny
+    private static BigInteger d; // Wykładnik prywatny
+    private static BigInteger k; // Losowa zaślepka (blinding factor)
 
+    // Getter i setter dla n
     public static BigInteger getN() {
         return n;
     }
+
     public static void setN(BigInteger n) {
         BlindRSASignature.n = n;
     }
 
+    // Getter i setter dla e
     public static BigInteger getE() {
         return e;
     }
+
     public static void setE(BigInteger e) {
         BlindRSASignature.e = e;
     }
 
+    // Getter i setter dla d
     public static BigInteger getD() {
         return d;
     }
+
     public static void setD(BigInteger d) {
         BlindRSASignature.d = d;
     }
 
+    // Getter dla k
     public static BigInteger getK() {
         return k;
     }
 
+    /**
+     * Konstruktor generujący klucze RSA przy utworzeniu obiektu.
+     */
     public BlindRSASignature() {
         generateKeys();
     }
 
-    // 0. Generowanie kluczy RSA
+    /**
+     * Generuje klucze RSA (n, e, d) oraz zaślepkę k.
+     */
     public static void generateKeys() {
-        BigInteger p = BigInteger.probablePrime(512, new Random());
-        BigInteger q = BigInteger.probablePrime(512, new Random());
-        n = p.multiply(q);
-        BigInteger phi = (p.subtract(BigInteger.ONE)).multiply(q.subtract(BigInteger.ONE));
+        Random random = new Random();
 
-        e = BigInteger.valueOf(65537);
+        // Losowe liczby pierwsze
+        BigInteger p = BigInteger.probablePrime(512, random);
+        BigInteger q = BigInteger.probablePrime(512, random);
+        n = p.multiply(q); // Moduł RSA
+
+        // Obliczenie funkcji Eulera
+        BigInteger phi = p.subtract(BigInteger.ONE).multiply(q.subtract(BigInteger.ONE));
+
+        // Wybór wykładnika e
+        e = BigInteger.valueOf(65537); // Częsty wybór -  liczba pierwsza → możliwa odwrotność mod φ(n), mało jedynek binarnie (2), odporne na znane ataki, standard w wielu bibliotekach
         while (!phi.gcd(e).equals(BigInteger.ONE)) {
-            e = e.add(BigInteger.TWO);
+            e = e.add(BigInteger.TWO); // Szukanie względnie pierwszej liczby
         }
 
+        // Obliczanie odwrotności e modulo phi
         d = e.modInverse(phi);
 
-        Random rand = new Random();
+        // Losowanie zaślepki k, względnie pierwszej z n
         do {
-            k = new BigInteger(n.bitLength(), rand);
+            k = new BigInteger(n.bitLength(), random);
         } while (!k.gcd(n).equals(BigInteger.ONE));
     }
 
-    // 1. Podpisanie pliku
+    /**
+     * Podpisuje dane przy użyciu metody blind signature.
+     *
+     * @param bytes Dane wejściowe do podpisania.
+     * @return Podpisane dane jako bajty lub null w razie błędu.
+     */
     public static byte[] signData(byte[] bytes) {
         if (bytes == null) {
             System.out.println("Błąd odczytu bajtów.");
             return null;
         }
 
+        // Haszowanie danych SHA-256
         byte[] hash;
-        try{
+        try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             hash = digest.digest(bytes);
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             System.out.println("Błąd SHA-256: " + e.getMessage());
             return null;
         }
 
+        // Zamiana skrótu na liczbę całkowitą
         BigInteger m = new BigInteger(1, hash);
 
+        // Losowanie nowej zaślepki k dla tego podpisu
         Random rand = new Random();
         do {
             k = new BigInteger(n.bitLength(), rand);
         } while (!k.gcd(n).equals(BigInteger.ONE));
 
-
+        // Tworzenie zaślepionego komunikatu
         BigInteger blinded = m.multiply(k.modPow(e, n)).mod(n);
+
+        // Podpisywanie zaślepionego komunikatu
         BigInteger blindSignature = blinded.modPow(d, n);
+
+        // Usunięcie zaślepki (odsłonięcie podpisu)
         BigInteger rInv = k.modInverse(n);
         BigInteger signature = blindSignature.multiply(rInv).mod(n);
 
         return signature.toByteArray();
     }
 
-    // 2. Weryfikacja podpisu (fragment 100 bajtów)
+    /**
+     * Weryfikuje podpis danych przez porównanie podpisu z haszem.
+     *
+     * @param signatureBytes Podpis (zdekodowany z pliku).
+     * @param signedFileBytes Oryginalna treść podpisywanego pliku.
+     * @return true, jeśli podpis jest poprawny; false w przeciwnym razie.
+     */
     public static boolean verifySignature(byte[] signatureBytes, byte[] signedFileBytes) {
-
         if (signatureBytes == null || signedFileBytes == null) {
             System.out.println("Błąd odczytu pliku.");
             return false;
         }
 
-
-//        SHA1 sha1 = new SHA1();
-//        byte[] hash = sha1.digest(signedFileBytes);
-//
-
+        // Obliczenie skrótu oryginalnych danych
         MessageDigest digest;
         try {
             digest = MessageDigest.getInstance("SHA-256");
@@ -118,46 +151,11 @@ public class BlindRSASignature {
         }
         byte[] hash = digest.digest(signedFileBytes);
 
+        BigInteger m = new BigInteger(1, hash);                  // Hasz danych
+        BigInteger signature = new BigInteger(1, signatureBytes); // Wczytany podpis
 
-        BigInteger m = new BigInteger(1, hash);
+        BigInteger verified = signature.modPow(e, n); // Weryfikacja podpisu: s^e mod n
 
-
-
-        BigInteger signature = new BigInteger(1, signatureBytes);
-
-        BigInteger verified = signature.modPow(e, n);
-
-        if (verified.equals(m)) {
-            return true;
-        } else {
-            return false;
-        }
+        return verified.equals(m); // Czy s^e mod n == hash?
     }
-
-    // Pomocnicze: Odczyt pliku binarnego
-    private static byte[] readFile(String fileName) {
-        try {
-            File file = new File(fileName);
-            byte[] bytes = new byte[(int) file.length()];
-            FileInputStream fis = new FileInputStream(file);
-            fis.read(bytes);
-            fis.close();
-            return bytes;
-        } catch (IOException e) {
-            System.out.println("Błąd odczytu pliku: " + e.getMessage());
-            return null;
-        }
-    }
-
-    // Pomocnicze: Zapis pliku binarnego
-    private static void writeFile(String fileName, byte[] content) {
-        try {
-            FileOutputStream fos = new FileOutputStream(fileName);
-            fos.write(content);
-            fos.close();
-        } catch (IOException e) {
-            System.out.println("Błąd zapisu do pliku: " + e.getMessage());
-        }
-    }
-
 }
