@@ -4,7 +4,7 @@ import java.math.BigInteger;
 import java.io.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Random;
+import java.security.SecureRandom;
 
 /**
  * Klasa realizująca podpisywanie z zaślepieniem (blind signature) w oparciu o RSA.
@@ -60,7 +60,8 @@ public class BlindRSASignature {
      * Generuje klucze RSA (n, e, d) oraz zaślepkę k.
      */
     public static void generateKeys() {
-        Random random = new Random();
+        SecureRandom random = new SecureRandom();
+
 
         // Losowe liczby pierwsze
         BigInteger p = BigInteger.probablePrime(512, random);
@@ -111,7 +112,8 @@ public class BlindRSASignature {
         BigInteger m = new BigInteger(1, hash);
 
         // Losowanie nowej zaślepki k dla tego podpisu
-        Random rand = new Random();
+        SecureRandom rand = new SecureRandom();
+
         do {
             k = new BigInteger(n.bitLength(), rand);
         } while (!k.gcd(n).equals(BigInteger.ONE));
