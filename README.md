@@ -1,98 +1,164 @@
-# RSADigitalBlindSignature
+# Blind RSA Signature (Zaślepiony Podpis RSA)
 
-Opis po polsku projektu demonstracyjnego implementującego koncepcję "Blind RSA Signature" (zaślepionego podpisu RSA) w formie prostej aplikacji JavaFX.
+![Java](https://img.shields.io/badge/Java-23-orange) ![Maven](https://img.shields.io/badge/Build-Maven-blue) ![JavaFX](https://img.shields.io/badge/UI-JavaFX-1f8acb) ![License](https://img.shields.io/badge/License-GPLv3-green) ![Status](https://img.shields.io/badge/CI-pending-lightgrey) ![Coverage](https://img.shields.io/badge/Coverage-soon-lightgrey)
 
-## Krótkie wprowadzenie
-Ta aplikacja to edukacyjna implementacja procesu Blind RSA Signature. Pozwala na zrozumienie, jak jedna strona (sygnatariusz) może podpisać wiadomość, nie wiedząc jaka to wiadomość — jednocześnie umożliwiając weryfikację podpisu przez stronę weryfikującą. Implementacja zawiera moduł modelu (logika kryptograficzna) oraz moduł widoku (interfejs JavaFX).
+Edukacyjna aplikacja demonstrująca mechanizm Blind RSA Signature – uzyskanie podpisu na wiadomość bez ujawniania jej treści sygnatariuszowi, z zachowaniem możliwości publicznej weryfikacji. Obecnie klucz RSA został podniesiony do ~2048 bit (2×1024-bit prime) dla lepszego przykładu dydaktycznego.
 
-Uwaga: to narzędzie ma charakter dydaktyczny i nie powinno być używane w środowisku produkcyjnym bez gruntownej rewizji bezpieczeństwa.
-
-## Główne funkcje
-- Generowanie kluczy RSA (publiczny/prywatny) — demonstracyjnie w module Model.
-- Zaslepianie wiadomości (blinding) — klient zaslepia wiadomość zanim zostanie podpisana.
-- Podpisywanie zaslepionej wiadomości — serwer podpisuje zaslepioną wiadomość prywatnym kluczem RSA.
-- Odslepianie podpisu (unblinding) — klient usuwa zaslepienie, by otrzymać ważny podpis na oryginalnej wiadomości.
-- Weryfikacja podpisu — sprawdzenie, czy podpis jest zgodny z kluczem publicznym.
-- Prosty GUI (JavaFX) do krokowego pokazania procesu.
-
-## Krótka teoria (co to jest Blind RSA Signature)
-- Blind signature (zaślepiony podpis) to technika kryptograficzna pozwalająca na otrzymanie podpisu na wiadomość bez ujawniania treści sygnatariuszowi.
-- Typowy przebieg:
-  1. Klient generuje wartość losową (blinding factor) i używa jej do "zaslepienia" wiadomości.
-  2. Klient wysyła zaslepioną wiadomość do sygnatariusza.
-  3. Sygnatariusz podpisuje zaslepioną wiadomość swoim prywatnym kluczem i zwraca podpisaną, zaslepioną wartość.
-  4. Klient usuwa efekt zaslepienia (unblinding) i otrzymuje podpis na oryginalnej wiadomości.
-  5. Każdy może zweryfikować podpis korzystając z klucza publicznego sygnatariusza.
-
-- W implementacji użyto podstawowego schematu RSA (modularnej arytmetyki). W praktyce należy używać sprawdzonych bibliotek i protokołów oraz odpowiednich schematów paddingu (np. RSA-PSS) i bezpiecznego zarządzania losowością.
-
-## Struktura projektu
-- `Model/` — moduł zawierający logikę kryptograficzną (generowanie kluczy, blinding, signing, unblinding, verify).
-- `View/` — moduł zawierający aplikację JavaFX i kontrolery GUI (np. `MainApplication`, `MainController`, plik FXML `main-view.fxml`).
-- `pom.xml` — główny plik Maven (projekt multi-modułowy). Każdy moduł ma swój `pom.xml`.
-
-## Jak uruchomić (sposoby)
-Poniżej kilka opcji — wybierz tę, która pasuje do Twojego środowiska.
-
-Wymagania:
-- Java 11+ (preferowane Java 17 lub wyższe) z obsługą modułów.
-- JavaFX SDK (jeśli nie jest dostarczony przez konfigurację Maven/IDE).
-- Maven (do budowania projektu).
-
-1) Najprościej — uruchom z IDE (IntelliJ IDEA):
-   - Otwórz projekt w IntelliJ jako projekt Maven.
-   - W module `View` zlokalizuj klasę `pl.kryptografia.view.MainApplication` i uruchom ją jako aplikację JavaFX.
-
-2) Za pomocą Mavena (jeśli `javafx-maven-plugin` jest skonfigurowany w `View/pom.xml`):
-   - W PowerShell w katalogu głównym projektu (lub bezpośrednio w `View`):
-
-```powershell
-mvn -f View/pom.xml javafx:run
-```
-
-3) Budowa pakietu i uruchomienie (ogólny sposób):
-   - Zbuduj moduły:
-
-```powershell
-mvn -pl View -am clean package
-```
-
-   - Jeśli powstał plik jar uruchomieniowy, możesz spróbować uruchomić go z odpowiednim ustawieniem module-path/--add-modules dla JavaFX. Przykład (wymaga JavaFX SDK i dopasowania ścieżek):
-
-```powershell
-java --module-path "C:\path\to\javafx-sdk\lib" --add-modules javafx.controls,javafx.fxml -jar View\target\your-app.jar
-```
-
-   - Zamiast ręcznych komend polecam uruchomienie z IDE, które automatycznie doda JavaFX do classpath/modulepath.
-
-Uwaga: dokładne komendy zależą od konfiguracji `pom.xml` i wersji JavaFX — jeśli napotkasz problemy, podaj treść `pom.xml` modułu `View` a pomogę dostosować polecenia.
-
-## Przykładowy przebieg w aplikacji (UI)
-1. Wygeneruj parę kluczy RSA (publiczny/prywatny).
-2. Wprowadź lub wybierz wiadomość do podpisu.
-3. Zaslepnij wiadomość — aplikacja wygeneruje blinding factor i pokaże zaslepioną wartość.
-4. Podpisz zaslepioną wartość (symulacja serwera) — aplikacja użyje prywatnego klucza do podpisu zaslepionej wartości.
-5. Odslepnij podpis — aplikacja usunie zaslepienie i pokaże wynikowy podpis dla oryginalnej wiadomości.
-6. Zweryfikuj podpis za pomocą klucza publicznego.
-
-## Bezpieczeństwo i ograniczenia
-- To narzędzie jest demonstracyjne. Implementacja może używać uproszczeń edukacyjnych (np. brak odpowiedniego paddingu, prosty generator losowości) — nie używaj tego do zabezpieczania rzeczywistych danych.
-- Dla produkcyjnych zastosowań używaj sprawdzonych bibliotek kryptograficznych (BouncyCastle, Java Cryptography Architecture z właściwym paddingiem) oraz protokołów opartych na aktualnych standardach.
-
-## Dalsze kroki / Rozszerzenia
-- Zaimplementować RSA-PSS lub inny bezpieczny schemat podpisu.
-- Dodać obsługę kluczy w plikach (eksport/import PEM).
-- Dodać testy jednostkowe dla modułu `Model` (generowanie kluczy, blinding/unblinding, verify).
-- Symulacja rzeczywistej komunikacji klient-serwer.
-
-## Kontakt / Licencja
-Projekt demonstracyjny — kod źródłowy możesz swobodnie modyfikować. Jeśli potrzebujesz pomocy z uruchomieniem lub chcesz dodać funkcjonalność, opisz problem w issue lub skontaktuj się bezpośrednio z autorem projektu.
+> Uwaga: Implementacja nadal używa „surowego” RSA bez paddingu (brak RSA-PSS). Kod ma charakter **edukacyjny** i nie jest przeznaczony do produkcji.
 
 ---
+## Spis treści
+1. Cel i streszczenie  
+2. Teoria – czym jest blind signature  
+3. Algorytm – kroki matematyczne  
+4. Architektura projektu  
+5. Uruchomienie (Windows / Maven / JavaFX)  
+6. Przykładowe użycie API (kod)  
+7. Testy (stan / co dodać)  
+8. Bezpieczeństwo i ograniczenia  
+9. Roadmapa / Pomysły rozwoju  
+10. Sekcja portfolio – wyróżniki i checklist  
+11. Licencja  
+12. FAQ  
 
-Jeżeli chcesz, mogę:
-- dopisać szczegółowe instrukcje uruchomienia dopasowane do dokładnej zawartości `pom.xml`,
-- dodać przykładowe testy jednostkowe dla `Model`,
-- albo wygenerować skrócony README w języku angielskim.
+---
+## 1. Cel i streszczenie
+Celem projektu jest pokazanie pełnego przepływu blind signature: generacja kluczy, haszowanie wiadomości, zaślepienie, podpis zasłoniętej wartości, odsłonięcie (unblinding) i finalna weryfikacja. Aplikacja oferuje GUI (JavaFX) oraz prosty model kryptograficzny.
 
-Powiedz, którą z tych czynności wykonam dalej.
+## 2. Teoria – czym jest Blind Signature?
+Blind signature (podpis z zaślepieniem) pozwala otrzymać podpis na wiadomość tak, aby sygnatariusz jej nie znał w momencie podpisywania. Po odsłonięciu podpis jest ważny i każdy może go zweryfikować. Typowe zastosowania: e‑głosowanie, e‑cash, anonimowe tokeny dostępu, systemy prywatności.
+
+## 3. Algorytm – kroki matematyczne
+Założenia: klucz publiczny (n, e), prywatny (n, d).
+
+1. Hash: M → m = SHA256(M) (liczba dodatnia).  
+2. Losowy czynnik k: 0 < k < n, gcd(k, n) = 1.  
+3. Zaślepienie: m' = m * k^e mod n.  
+4. Podpisanie (sygnatariusz widzi jedynie m'): s' = (m')^d mod n.  
+5. Odsłonięcie: k^{-1} mod n; s = s' * k^{-1} mod n.  
+6. Weryfikacja: sprawdź czy s^e mod n == m.  
+
+Schemat:
+```
+Plain → SHA-256 → m --blind(k)--> m' --sign(d)--> s' --unblind(k^{-1})--> s --verify(e)--> m
+```
+Plik kluczowy: `Model/src/main/java/pl/kryptografia/model/BlindRSASignature.java`.
+
+## 4. Architektura projektu
+Multi-module Maven:
+- `Model/` – logika RSA + blind signature (BigInteger, SecureRandom, hashowanie).  
+- `View/` – JavaFX GUI (`MainApplication`, `MainController`, FXML).  
+- `docs/` – diagram PlantUML, plan benchmarków, miejsce na zrzuty ekranu.  
+- Pliki wsparcia: `SECURITY.md`, `CHANGELOG.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`.
+
+Przepływ: Użytkownik → GUI → Wywołania statycznych metod modelu → Wynik (podpis / weryfikacja) → Prezentacja w UI.
+
+## 5. Uruchomienie (Windows / PowerShell)
+Wymagania: JDK 23, Maven 3.8+, internet do pobrania zależności. 
+
+```powershell
+# Budowa wszystkich modułów
+mvn clean install
+
+# Uruchomienie GUI (JavaFX)
+mvn -f View/pom.xml javafx:run
+
+# Utworzenie obrazu jlink (zależne od pluginu)
+mvn -f View/pom.xml javafx:jlink
+```
+Ręczne uruchomienie JAR (jeśli powstanie):
+```powershell
+java -jar View\target\view-1.0-SNAPSHOT.jar
+```
+Jeśli IDE zgłasza brak JavaFX na module-path, dodaj `--module-path` i `--add-modules javafx.controls,javafx.fxml` (przy lokalnym SDK JavaFX). 
+
+## 6. Przykładowe użycie API
+Minimalny kod (bez GUI):
+```java
+import pl.kryptografia.model.BlindRSASignature;
+import java.nio.charset.StandardCharsets;
+
+public class Demo {
+    public static void main(String[] args) {
+        BlindRSASignature rsa = new BlindRSASignature(); // generuje klucze ~2048 bit
+        byte[] data = "Wiadomosc testowa".getBytes(StandardCharsets.UTF_8);
+        byte[] sig = BlindRSASignature.signData(data);
+        boolean ok = BlindRSASignature.verifySignature(sig, data);
+        System.out.println("Poprawność: " + ok);
+    }
+}
+```
+
+## 7. Testy – stan i propozycje
+Aktualnie: Podstawowe testy JUnit znajdują się w module `Model` (`BlindRSASignatureTest`).
+
+Do dodania:
+- Test modyfikacji podpisu (mutacja bajtu → verify = false).  
+- Testy dla różnych długości wiadomości (małe / większe kilka KB).  
+- Property-based (jqwik): `verifySignature(signData(m), m)` zawsze true.  
+- Test statystyczny różnorodności k (losowość).  
+- Test odrzucenia `null` / pustych tablic (konsekwentna sygnalizacja wyjątkiem lub wynikiem).  
+
+Uruchomienie testów (po zainstalowaniu Mavena):
+```powershell
+mvn -pl Model test
+mvn verify  # generuje raport JaCoCo
+```
+Raport pokrycia: `Model/target/site/jacoco/index.html`.
+
+## 8. Bezpieczeństwo i ograniczenia
+| Obszar | Stan | Konsekwencje |
+|--------|------|--------------|
+| Padding | BRAK (raw RSA) | Podatne na znane ataki na podpisy / strukturalne manipulacje |
+| Rozmiar klucza | ~2048 bit | Edukacyjnie ok, produkcja często ≥3072 zależnie od polityk |
+| Zarządzanie kluczem | Brak formatu PEM / KeyStore | Utrudniona bezpieczna dystrybucja kluczy |
+| Role | Połączone w jednym procesie | Brak izolacji klienta i sygnatariusza |
+| Side-channel | Brak zabezpieczeń timing/power | Nieodporne w środowisku zagrożonym |
+| Losowość | SecureRandom, brak testów entropii | Edukacyjnie wystarczające, brak dowodu jakości |
+| Walidacja wejść | `null` → komunikat tylko w konsoli | Nierówne API dla produkcji (preferowane wyjątki) |
+
+**Disclaimer:** Użycie tylko do demonstracji. Do realnych wdrożeń: RSA-PSS, dłuższe klucze (≥3072), KeyStore, separacja ról, audyt bezpieczeństwa.
+
+## 9. Roadmapa / Pomysły rozwoju
+- Dodanie RSA-PSS (padding) i uchwycenie wyjątków konsekwentnie.  
+- Eksport/import kluczy w PEM (BASE64 + nagłówki).  
+- Oddzielenie ról: osobny moduł „signer” z REST API (np. Spring Boot).  
+- Benchmarki JMH (czas generacji, podpisu, blindingu).  
+- Diagramy dodatkowe: komponent, przepływ danych, deployment.  
+- Testy property-based + testy mutacyjne (PIT).  
+- Tryb CLI: polecenia `generate`, `sign`, `verify`.  
+- Internationalization (PL / EN wybór w GUI).  
+- Integracja z GitHub Actions (badge CI, coverage).  
+
+## 10. Sekcja portfolio – wyróżniki & checklist
+Wyróżniki:
+- Implementacja mniej typowego mechanizmu blind signature.  
+- Modularna architektura (Model + View).  
+- JavaFX + ControlsFX UI.  
+- Dokumentacja (README, SECURITY, CHANGELOG, CONTRIBUTING, CODE OF CONDUCT).  
+- Diagram PlantUML sekwencji.  
+
+Checklist przed publikacją:
+- [ ] Dodaj plik `LICENSE` (jeśli nie ma – GPLv3/MIT/Apache 2.0).  
+- [ ] Dodaj mutacyjny test podpisu.  
+- [ ] Wstaw zrzuty ekranu do `docs/screenshots` i podlinkuj.  
+- [ ] Odpal CI → uzupełnij badge statusu + coverage.  
+- [ ] Rozbuduj README_EN (pełna wersja).  
+- [ ] Ewentualnie refaktoryzuj klasę na instancyjną (bez statycznych pól).  
+- [ ] Dodaj eksport PEM.  
+
+## 11. Licencja
+Deklarowana w POM: GPLv3. Jeśli chcesz szerszej adopcji i prostszego użycia w portfolio – rozważ MIT lub Apache 2.0 (mniej restrykcyjne niż copyleft GPL).
+
+## 12. FAQ
+**Dlaczego brak RSA-PSS?**  
+Projekt skupia się na pokazaniu mechaniki blindowania – padding to kolejny krok w bezpieczeństwie.
+
+**Czy klucz ~2048 bit wystarczy?**  
+Dla edukacji tak. W produkcji zwykle ≥2048, a dla długiej perspektywy ≥3072 / 4096.
+
+**Czy mogę dodać ECDSA / Schnorr?**  
+Tak – blind signature ma warianty dla Schnorra; można rozbudować moduł Model.
+
+**Dlaczego metody i klucze są statyczne?**  
+Uproszczenie dla GUI. Refaktoryzacja do instancji poprawi testowalność i możliwość wielu równoległych kluczy.

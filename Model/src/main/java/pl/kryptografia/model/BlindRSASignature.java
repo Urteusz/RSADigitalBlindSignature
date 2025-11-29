@@ -8,6 +8,7 @@ import java.security.SecureRandom;
 
 /**
  * Klasa realizująca podpisywanie z zaślepieniem (blind signature) w oparciu o RSA.
+ * Uwaga: nadal brak paddingu (RSA-PSS) – kod ma charakter edukacyjny.
  */
 public class BlindRSASignature {
 
@@ -15,7 +16,7 @@ public class BlindRSASignature {
     private static BigInteger n; // Moduł klucza publicznego
     private static BigInteger e; // Wykładnik publiczny
     private static BigInteger d; // Wykładnik prywatny
-    private static BigInteger k; // Losowa zaślepka (blinding factor)
+    private static BigInteger k; // Ostatnio użyta zaślepka (blinding factor)
 
     // Getter i setter dla n
     public static BigInteger getN() {
@@ -57,47 +58,36 @@ public class BlindRSASignature {
     }
 
     /**
-     * Generuje klucze RSA (n, e, d) oraz zaślepkę k.
+     * Generuje klucze RSA (n, e, d) oraz inicjalną zaślepkę k.
      */
     public static void generateKeys() {
         SecureRandom random = new SecureRandom();
 
+        BigInteger p = BigInteger.probablePrime(1024, random);
+        BigInteger q = BigInteger.probablePrime(1024, random);
+        n = p.multiply(q);
 
-        // Losowe liczby pierwsze
-        BigInteger p = BigInteger.probablePrime(512, random);
-        BigInteger q = BigInteger.probablePrime(512, random);
-        n = p.multiply(q); // Moduł RSA
-
-        // Obliczenie funkcji Eulera
         BigInteger phi = p.subtract(BigInteger.ONE).multiply(q.subtract(BigInteger.ONE));
 
-        // Wybór wykładnika e
-        e = BigInteger.valueOf(65537); // Częsty wybór -  liczba pierwsza → możliwa odwrotność mod φ(n), mało jedynek binarnie (2), odporne na znane ataki, standard w wielu bibliotekach
+        e = BigInteger.valueOf(65537); // Standardowy wybór
         while (!phi.gcd(e).equals(BigInteger.ONE)) {
-            e = e.add(BigInteger.TWO); // Szukanie względnie pierwszej liczby
+            e = e.add(BigInteger.TWO);
         }
-
-        // Obliczanie odwrotności e modulo phi
         d = e.modInverse(phi);
 
-        // Losowanie zaślepki k, względnie pierwszej z n
-        do {
-            k = new BigInteger(n.bitLength(), random);
-        } while (!k.gcd(n).equals(BigInteger.ONE));
+        // Inicjalna zaślepka
+        k = generateBlindingFactor(random);
     }
 
     /**
      * Podpisuje dane przy użyciu metody blind signature.
-     *
-     * @param bytes Dane wejściowe do podpisania.
-     * @return Podpisane dane jako bajty lub null w razie błędu.
+     * Generuje nowy blinding factor k dla każdego podpisu.
      */
     public static byte[] signData(byte[] bytes) {
         if (bytes == null) {
             System.out.println("Błąd odczytu bajtów.");
             return null;
         }
-
         // Haszowanie danych SHA-256
         byte[] hash;
         try {
@@ -108,23 +98,16 @@ public class BlindRSASignature {
             return null;
         }
 
-        // Zamiana skrótu na liczbę całkowitą
         BigInteger m = new BigInteger(1, hash);
 
-        // Losowanie nowej zaślepki k dla tego podpisu
-        SecureRandom rand = new SecureRandom();
+        // Nowa zaślepka dla tego podpisu
+        k = generateBlindingFactor(new SecureRandom());
 
-        do {
-            k = new BigInteger(n.bitLength(), rand);
-        } while (!k.gcd(n).equals(BigInteger.ONE));
-
-        // Tworzenie zaślepionego komunikatu
+        // m' = m * k^e mod n
         BigInteger blinded = m.multiply(k.modPow(e, n)).mod(n);
-
-        // Podpisywanie zaślepionego komunikatu
+        // s' = (m')^d mod n
         BigInteger blindSignature = blinded.modPow(d, n);
-
-        // Usunięcie zaślepki (odsłonięcie podpisu)
+        // s = s' * k^{-1} mod n
         BigInteger rInv = k.modInverse(n);
         BigInteger signature = blindSignature.multiply(rInv).mod(n);
 
@@ -133,18 +116,12 @@ public class BlindRSASignature {
 
     /**
      * Weryfikuje podpis danych przez porównanie podpisu z haszem.
-     *
-     * @param signatureBytes Podpis (zdekodowany z pliku).
-     * @param signedFileBytes Oryginalna treść podpisywanego pliku.
-     * @return true, jeśli podpis jest poprawny; false w przeciwnym razie.
      */
     public static boolean verifySignature(byte[] signatureBytes, byte[] signedFileBytes) {
         if (signatureBytes == null || signedFileBytes == null) {
             System.out.println("Błąd odczytu pliku.");
             return false;
         }
-
-        // Obliczenie skrótu oryginalnych danych
         MessageDigest digest;
         try {
             digest = MessageDigest.getInstance("SHA-256");
@@ -152,12 +129,24 @@ public class BlindRSASignature {
             throw new RuntimeException(ex);
         }
         byte[] hash = digest.digest(signedFileBytes);
+        BigInteger m = new BigInteger(1, hash);
+        BigInteger signature = new BigInteger(1, signatureBytes);
 
-        BigInteger m = new BigInteger(1, hash);                  // Hasz danych
-        BigInteger signature = new BigInteger(1, signatureBytes); // Wczytany podpis
+        // s^e mod n powinno dać m
+        BigInteger verified = signature.modPow(e, n);
+        return verified.equals(m);
+    }
 
-        BigInteger verified = signature.modPow(e, n); // Weryfikacja podpisu: s^e mod n
-
-        return verified.equals(m); // Czy s^e mod n == hash?
+    /**
+     * Generuje czynnik zaślepiający k: 0 < k < n oraz gcd(k, n) = 1.
+     */
+    private static BigInteger generateBlindingFactor(SecureRandom random) {
+        BigInteger r;
+        do {
+            do {
+                r = new BigInteger(n.bitLength(), random);
+            } while (r.compareTo(n) >= 0 || r.equals(BigInteger.ZERO));
+        } while (!r.gcd(n).equals(BigInteger.ONE));
+        return r;
     }
 }
